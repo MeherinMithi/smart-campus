@@ -1,105 +1,144 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <h1 class="cute">˚.🎀༘⋆ Welcome ˚.🎀༘⋆</h1>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Campus — Complaint & Issue Tracking</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
 
-  <head>
-    <meta charset="UTF-8" />
-    <title>Smart Campus Complaint System</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <!-- Navbar -->
-    <header class="navbar">
-      <h1 class="logo">Smart Campus</h1>
-      <nav>
-        <a href="#">Home</a>
-        <a href="#features">Features</a>
-        <a href="#how">How It Works</a>
-        <a href="login.html">Login</a>
-      </nav>
-    </header>
-   
+  <!-- Navbar -->
+  <header class="landing-navbar">
+    <div class="brand">Smart<span>Campus</span></div>
+    <nav>
+      <a href="#how">How It Works</a>
+      <a href="#features">Features</a>
+      <a href="#roles">Roles</a>
+      <a href="pages/login.php" class="cta">Login →</a>
+    </nav>
+  </header>
 
-
-    <!-- Hero Section -->
-    <section class="hero">
-      <h2>Smart Campus Complaint & Issue Tracking System</h2>
-      <p>
-        Report campus problems, track progress, and ensure faster resolutions
-        for a better campus experience.
-      </p>
-      <div class="hero-buttons">
-        <a href="#" class="btn primary">Submit Complaint</a>
-        
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-inner">
+      <h1>Campus Issues, <span>Resolved</span><br>Faster Than Ever.</h1>
+      <p>A smart complaint and issue tracking system for students, administrators, and maintenance staff — all in one place.</p>
+      <div class="hero-btns">
+        <a href="pages/login.php" class="btn btn-accent">Get Started →</a>
+        <a href="#how" class="btn btn-outline" style="border-color:rgba(255,255,255,0.3);color:#fff;">See How It Works</a>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- How It Works -->
-    <section class="how-it-works" id="how">
-      <h2>How It Works</h2>
-      <div class="steps">
-        <div class="card">
-          <h3>1. Submit Issue</h3>
-          <p>
-            Students submit complaints related to classroom, hostel, lab, or
-            security.
-          </p>
+  <!-- How It Works -->
+  <section class="landing-section" id="how" style="background:#fff;">
+    <div class="landing-section-inner">
+      <h2>How It <span>Works</span></h2>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <h3>Submit Issue</h3>
+          <p>Students submit complaints related to classroom, hostel, lab, cafeteria, library, or security.</p>
         </div>
-        <div class="card">
-          <h3>2. Review & Assign</h3>
-          <p>
-            Admin reviews the issue and assigns it to the concerned department.
-          </p>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <h3>Review & Assign</h3>
+          <p>Admin reviews the issue and assigns it to the concerned maintenance staff member.</p>
         </div>
-        <div class="card">
-          <h3>3. Resolve</h3>
-          <p>Maintenance staff resolves the issue based on priority.</p>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <h3>Resolve</h3>
+          <p>Maintenance staff resolves the issue and marks it complete with a resolution note.</p>
         </div>
-        <div class="card">
-          <h3>4. Close</h3>
-          <p>Status is updated and students are notified after resolution.</p>
+        <div class="step-card">
+          <div class="step-num">4</div>
+          <h3>Close & Notify</h3>
+          <p>Status is updated and students can track the resolution of their complaint.</p>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Features -->
-    <section class="features" id="features">
-      <h2>Key Features</h2>
-      <ul>
-        <li>Category-wise complaint tracking</li>
-        <li>Priority-based issue handling</li>
-        <li>Status tracking (Submitted → In Progress → Resolved)</li>
-        <li>Admin dashboard overview</li>
-        <li>Resolution time monitoring</li>
-        <li>Email / notification simulation</li>
-      </ul>
-    </section>
+  <!-- Features -->
+  <section class="landing-section" id="features" style="background:var(--bg);">
+    <div class="landing-section-inner">
+      <h2>Key <span>Features</span></h2>
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon">📋</div>
+          <div>
+            <h3>Category-wise Tracking</h3>
+            <p>Complaints are organized by category — classroom, hostel, lab, cafeteria, library, security.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🔥</div>
+          <div>
+            <h3>Priority-based Handling</h3>
+            <p>Issues are tagged High, Medium, or Low priority so urgent problems are addressed first.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📊</div>
+          <div>
+            <h3>Status Tracking</h3>
+            <p>Real-time status updates: Submitted → In Progress → Resolved.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🛡️</div>
+          <div>
+            <h3>Admin Dashboard</h3>
+            <p>Admins get a full overview of all complaints with assignment and management tools.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">⏱️</div>
+          <div>
+            <h3>Resolution Monitoring</h3>
+            <p>Track how long each complaint takes from submission to resolution.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🔧</div>
+          <div>
+            <h3>Staff Portal</h3>
+            <p>Maintenance staff have their own portal to view and resolve assigned issues.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <!-- User Roles -->
-    <section class="roles">
-      <h2>User Roles 🎀</h2>
-      <div class="role-cards">
-        <div class="card">
+  <!-- Roles -->
+  <section class="landing-section" id="roles" style="background:#fff;">
+    <div class="landing-section-inner">
+      <h2>User <span>Roles</span></h2>
+      <div class="roles-grid">
+        <div class="role-card">
+          <div class="role-icon">🎓</div>
           <h3>Student</h3>
-          <p>Submit complaints and track resolution status.</p>
+          <p>Submit complaints, track their resolution status, and stay informed about updates to their reported issues.</p>
         </div>
-        <div class="card">
+        <div class="role-card">
+          <div class="role-icon">🛡️</div>
           <h3>Admin</h3>
-          <p>Manage complaints, assign tasks, and monitor performance.</p>
+          <p>Review all complaints, assign them to staff, monitor overall performance, and close resolved issues.</p>
         </div>
-        <div class="card">
+        <div class="role-card">
+          <div class="role-icon">🔧</div>
           <h3>Maintenance Staff</h3>
-          <p>Resolve assigned issues efficiently.</p>
+          <p>View complaints assigned to them, take action, and update status with resolution notes.</p>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Footer -->
-    <footer class="footer">
-      <p>
-        © 2026 Smart Campus Complaint System <br />
-        Developed by Your Name
-      </p>
-    </footer>
-  </body>
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <p>© 2026 <span>Smart Campus</span> Complaint & Issue Tracking System</p>
+  </footer>
+
+</body>
 </html>

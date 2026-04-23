@@ -1,0 +1,23 @@
+[
+  {
+    "username": "student1",
+    "email": "student1@campus.edu",
+    "password": "student123",
+    "role": "student",
+    "fullname": "Ayesha Rahman"
+  },
+  {
+    "username": "admin1",
+    "email": "admin@campus.edu",
+    "password": "admin123",
+    "role": "admin",
+    "fullname": "Dr. Karim Hossain"
+  },
+  {
+    "username": "staff1",
+    "email": "staff@campus.edu",
+    "password": "staff123",
+    "role": "staff",
+    "fullname": "Rahim Mia"
+  }
+]
