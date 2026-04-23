@@ -1,0 +1,130 @@
+.title::before {
+  content: "˚.🎀༘⋆ ";
+}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+.cute {
+  color: rgb(201, 11, 83);
+  font-family: cursive;
+  text-align: center;
+}
+.cute-divider {
+  text-align: center;
+  font-size: 24px;
+  margin: 40px 0;
+}
+
+body {
+  background-color: #FFB6C1;
+  color: #333;
+}
+
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #cf1773;
+  padding: 15px 40px;
+}
+
+.logo {
+  color: #fff;
+}
+
+.navbar a {
+  color: #e7e5e6;
+  text-decoration: none;
+  margin-left: 20px;
+  font-weight: bold;
+}
+
+.navbar a:hover {
+  text-decoration: underline;
+}
+
+/* Hero */
+.hero {
+  text-align: center;
+  padding: 80px 20px;
+  background-color: #fd90c3;
+}
+
+.hero h2 {
+  font-size: 32px;
+  margin-bottom: 15px;
+}
+
+.hero p {
+  font-size: 18px;
+  margin-bottom: 25px;
+}
+
+.hero-buttons .btn {
+  padding: 12px 20px;
+  margin: 5px;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.primary {
+  background-color: #f73e8b;
+  color: white;
+}
+
+.secondary {
+  background-color: #1ba77d;
+  color: rgb(133, 57, 57) ;
+}
+
+/* Sections */
+section {
+  padding: 60px 40px;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+/* Cards */
+.steps,
+.role-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background-color: #f17e9b;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(177, 185, 169, 0.1);
+  text-align: center;
+}
+
+/* Features */
+.features ul {
+  max-width: 600px;
+  margin: auto;
+  list-style-type: square;
+}
+
+.features li {
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+/* Footer */
+.footer {
+  background-color: #f5336d;
+  color: white;
+  text-align: center;
+  padding: 20px;
+}

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Form</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #cf1773 0%, #f5336d 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .login-container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        width: 100%;
+        max-width: 400px;
+      }
+
+      .login-header {
+        background: linear-gradient(135deg, #f5336d 0%, #ff6b9d 100%);
+        padding: 40px 30px;
+        text-align: center;
+        color: white;
+      }
+
+      .login-header h2 {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .login-header p {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      .login-form {
+        padding: 40px 30px;
+      }
+
+      .form-group {
+        margin-bottom: 25px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 15px;
+        transition: all 0.3s ease;
+        outline: none;
+      }
+
+      .form-group input:focus {
+        border-color: #f5336d;
+        box-shadow: 0 0 0 3px rgba(245, 51, 109, 0.1);
+      }
+
+      .form-group input::placeholder {
+        color: #999;
+      }
+
+      .login-btn {
+        width: 100%;
+        padding: 14px;
+        background-color: #f5336d;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 10px;
+      }
+
+      .login-btn:hover {
+        background-color: #d62959;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(245, 51, 109, 0.3);
+      }
+
+      .login-btn:active {
+        transform: translateY(0);
+      }
+
+      .form-footer {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e0e0;
+      }
+
+      .form-footer a {
+        color: #f5336d;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .form-footer a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 480px) {
+        .login-container {
+          border-radius: 0;
+        }
+
+        .login-form {
+          padding: 30px 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <div class="login-header">
+        <h2>Welcome Back</h2>
+        <p>Please login to your account</p>
+      </div>
+      <form action="login.php" method="POST" class="login-form">
+        <div class="form-group">
+          <label>Username</label>
+          <input
+            type="text"
+            name="username"
+            placeholder="Enter your username"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input
+            type="email"
+            name="email"
+            placeholder="Enter your email"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input
+            type="password"
+            name="password"
+            placeholder="Enter your password"
+            required
+          />
+        </div>
+        <button type="submit" class="login-btn">Login</button>
+        <div class="form-footer">
+          <a href="#">Forgot password?</a>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>
