@@ -1,63 +1,58 @@
 <?php
 session_start();
 if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'admin') {
-    header("Location: login.php");
-    exit;
+    header("Location: login.php"); exit;
 }
+require_once 'helpers.php';
 
-$jsonPath = __DIR__ . '/../data/complaints.json';
-$complaints = json_decode(file_get_contents($jsonPath), true) ?? [];
-usort($complaints, fn($a,$b) => strcmp($b['submitted_at'], $a['submitted_at']));
-
-// Handle assign & status change
+// Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $targetId  = $_POST['complaint_id'] ?? '';
-    $action    = $_POST['action'] ?? '';
+    $all      = loadComplaints();
+    $targetId = $_POST['complaint_id'] ?? '';
+    $action   = $_POST['action'] ?? '';
 
-    foreach ($complaints as &$c) {
+    foreach ($all as &$c) {
         if ($c['id'] !== $targetId) continue;
-
         if ($action === 'assign') {
             $c['assigned_to'] = trim($_POST['assigned_to'] ?? '');
-            $c['status'] = 'In Progress';
+            $c['status']      = 'In Progress';
         } elseif ($action === 'resolve') {
-            $c['status'] = 'Resolved';
+            $c['status']          = 'Resolved';
             $c['resolution_note'] = trim($_POST['resolution_note'] ?? '');
+            $c['resolved_at']     = date('Y-m-d H:i:s');
         } elseif ($action === 'reopen') {
-            $c['status'] = 'Submitted';
-            $c['assigned_to'] = '';
+            $c['status']          = 'Submitted';
+            $c['assigned_to']     = '';
             $c['resolution_note'] = '';
+            $c['resolved_at']     = '';
         }
         break;
     }
     unset($c);
-    file_put_contents($jsonPath, json_encode($complaints, JSON_PRETTY_PRINT));
-    header("Location: admin_dashboard.php");
-    exit;
+    saveComplaints($all);
+    header("Location: admin_dashboard.php"); exit;
 }
 
-$total      = count($complaints);
-$submitted  = count(array_filter($complaints, fn($c) => $c['status'] === 'Submitted'));
-$inProgress = count(array_filter($complaints, fn($c) => $c['status'] === 'In Progress'));
-$resolved   = count(array_filter($complaints, fn($c) => $c['status'] === 'Resolved'));
+$all = loadComplaints();
+usort($all, fn($a,$b) => strcmp($b['submitted_at'], $a['submitted_at']));
 
-// Filter
-$filterStatus   = $_GET['status'] ?? '';
+$total      = count($all);
+$submitted  = count(array_filter($all, fn($c) => $c['status'] === 'Submitted'));
+$inProgress = count(array_filter($all, fn($c) => $c['status'] === 'In Progress'));
+$resolved   = count(array_filter($all, fn($c) => $c['status'] === 'Resolved'));
+
+$filterStatus   = $_GET['status']   ?? '';
 $filterCategory = $_GET['category'] ?? '';
-$filtered = $complaints;
-if ($filterStatus)   $filtered = array_values(array_filter($filtered, fn($c) => $c['status'] === $filterStatus));
+$filtered = $all;
+if ($filterStatus)   $filtered = array_values(array_filter($filtered, fn($c) => $c['status']   === $filterStatus));
 if ($filterCategory) $filtered = array_values(array_filter($filtered, fn($c) => $c['category'] === $filterCategory));
 
-function statusBadge($s) {
-    $map = ['Submitted'=>'submitted','In Progress'=>'inprogress','Resolved'=>'resolved'];
-    return "<span class='badge badge-".($map[$s]??'submitted')."'>{$s}</span>";
-}
-function priorityBadge($p) {
-    $map = ['High'=>'high','Medium'=>'medium','Low'=>'low'];
-    return "<span class='badge badge-".($map[$p]??'low')."'>{$p}</span>";
-}
-
+$notifs   = getNotifications($all, $_SESSION['username'], 'admin');
 $initials = strtoupper(substr($_SESSION['fullname'], 0, 1));
+
+// Load staff list for assign dropdown
+$users = json_decode(file_get_contents(__DIR__ . '/../data/users.json'), true) ?? [];
+$staff = array_values(array_filter($users, fn($u) => $u['role'] === 'staff'));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -85,8 +80,22 @@ $initials = strtoupper(substr($_SESSION['fullname'], 0, 1));
       <a href="admin_dashboard.php" class="active">All Complaints</a>
     </nav>
     <div class="user-badge">
+      <div class="notif-wrap">
+        <button class="notif-bell" onclick="toggleNotif()">
+          🔔<?php if (count($notifs)): ?><span class="notif-count"><?= count($notifs) ?></span><?php endif; ?>
+        </button>
+        <div class="notif-dropdown" id="notifBox">
+          <div class="notif-hd">🔔 Notifications</div>
+          <?php if (empty($notifs)): ?>
+            <div class="notif-empty">No new notifications.</div>
+          <?php else: foreach ($notifs as $n): ?>
+            <div class="notif-item unread"><?= htmlspecialchars($n['msg']) ?><div class="notif-time"><?= htmlspecialchars($n['time']) ?></div></div>
+          <?php endforeach; endif; ?>
+        </div>
+      </div>
       <div class="avatar"><?= $initials ?></div>
       <span><?= htmlspecialchars($_SESSION['fullname']) ?></span>
+      <span class="role-tag">Admin</span>
       <a href="logout.php" class="logout-btn">Logout</a>
     </div>
   </header>
@@ -97,7 +106,6 @@ $initials = strtoupper(substr($_SESSION['fullname'], 0, 1));
       <p>Manage and assign all campus complaints from a single view.</p>
     </div>
 
-    <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card accent-card">
         <span class="stat-label">Total Complaints</span>
@@ -105,9 +113,9 @@ $initials = strtoupper(substr($_SESSION['fullname'], 0, 1));
         <span class="stat-sub">All time</span>
       </div>
       <div class="stat-card info-card">
-        <span class="stat-label">Pending Review</span>
+        <span class="stat-label">Needs Assignment</span>
         <span class="stat-value"><?= $submitted ?></span>
-        <span class="stat-sub">Needs assignment</span>
+        <span class="stat-sub">Awaiting action</span>
       </div>
       <div class="stat-card warning-card">
         <span class="stat-label">In Progress</span>
@@ -121,15 +129,13 @@ $initials = strtoupper(substr($_SESSION['fullname'], 0, 1));
       </div>
     </div>
 
-    <!-- Complaints Table -->
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border);">
-        <h2 class="card-title" style="margin:0;padding:0;border:none;">All Complaints</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+        <div class="card-title" style="margin:0;padding:0;border:none;">All Complaints</div>
         <span style="font-size:13px;color:var(--text-muted);"><?= count($filtered) ?> shown</span>
       </div>
 
-      <!-- Filters -->
-      <form method="GET">
+      <form method="GET" action="admin_dashboard.php">
         <div class="filter-bar">
           <label>Filter:</label>
           <select name="status" onchange="this.form.submit()">
@@ -157,23 +163,17 @@ $initials = strtoupper(substr($_SESSION['fullname'], 0, 1));
           <table>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Student</th>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Submitted</th>
-                <th>Actions</th>
+                <th>ID</th><th>Student</th><th>Title</th><th>Category</th>
+                <th>Priority</th><th>Status</th><th>Submitted</th><th>Time</th><th>Actions</th>
               </tr>
             </thead>
             <tbody>
               <?php foreach ($filtered as $i => $c): ?>
-              <tr>
-                <td style="font-weight:600;color:var(--primary);"><?= htmlspecialchars($c['id']) ?></td>
+              <tr class="clickable-row" onclick="toggleRow(<?= $i ?>)">
+                <td style="font-weight:bold;color:var(--primary);"><?= htmlspecialchars($c['id']) ?></td>
                 <td style="font-size:13px;"><?= htmlspecialchars($c['student_name']) ?></td>
                 <td>
-                  <div style="font-weight:500;"><?= htmlspecialchars($c['title']) ?></div>
+                  <div style="font-weight:bold;"><?= htmlspecialchars($c['title']) ?></div>
                   <?php if ($c['assigned_to']): ?>
                     <div style="font-size:12px;color:var(--text-muted);">→ <?= htmlspecialchars($c['assigned_to']) ?></div>
                   <?php endif; ?>
@@ -181,22 +181,41 @@ $initials = strtoupper(substr($_SESSION['fullname'], 0, 1));
                 <td><?= htmlspecialchars($c['category']) ?></td>
                 <td><?= priorityBadge($c['priority']) ?></td>
                 <td><?= statusBadge($c['status']) ?></td>
-                <td style="color:var(--text-muted);font-size:13px;"><?= htmlspecialchars(substr($c['submitted_at'],0,10)) ?></td>
-                <td>
-                  <div class="action-btns">
-                    <button class="btn btn-outline btn-sm" onclick="openDetail('<?= $i ?>')">View</button>
+                <td style="font-size:13px;color:var(--text-muted);"><?= substr($c['submitted_at'],0,10) ?></td>
+                <td><span class="time-chip"><?= resolutionTime($c['submitted_at'], $c['resolved_at']) ?></span></td>
+                <td onclick="event.stopPropagation()">
+                  <div style="display:flex;gap:5px;flex-wrap:wrap;">
                     <?php if ($c['status'] !== 'Resolved'): ?>
-                      <button class="btn btn-primary btn-sm" onclick="openAssign('<?= htmlspecialchars($c['id']) ?>', '<?= htmlspecialchars($c['assigned_to']) ?>')">Assign</button>
+                      <button class="btn btn-primary btn-sm"
+                        onclick="openAssign('<?= htmlspecialchars($c['id'],ENT_QUOTES) ?>')">Assign</button>
                     <?php endif; ?>
                     <?php if ($c['status'] === 'In Progress'): ?>
-                      <button class="btn btn-success btn-sm" onclick="openResolve('<?= htmlspecialchars($c['id']) ?>')">Resolve</button>
+                      <button class="btn btn-success btn-sm"
+                        onclick="openResolve('<?= htmlspecialchars($c['id'],ENT_QUOTES) ?>')">Resolve</button>
                     <?php endif; ?>
                     <?php if ($c['status'] === 'Resolved'): ?>
-                      <form method="POST" style="display:inline;" onsubmit="return confirm('Reopen this complaint?')">
+                      <form method="POST" onsubmit="return confirm('Reopen this complaint?')" style="display:inline;">
                         <input type="hidden" name="complaint_id" value="<?= htmlspecialchars($c['id']) ?>">
                         <input type="hidden" name="action" value="reopen">
                         <button type="submit" class="btn btn-outline btn-sm">Reopen</button>
                       </form>
+                    <?php endif; ?>
+                  </div>
+                </td>
+              </tr>
+              <tr class="detail-row" id="detail-<?= $i ?>">
+                <td colspan="9">
+                  <div class="detail-inner">
+                    <div class="detail-label">Description</div>
+                    <p><?= nl2br(htmlspecialchars($c['description'])) ?></p>
+                    <?php if ($c['status']==='Resolved' && $c['resolution_note']): ?>
+                      <div class="resolution-box">
+                        <div class="detail-label" style="color:var(--success);">✅ Resolution Note</div>
+                        <p style="color:var(--success);"><?= nl2br(htmlspecialchars($c['resolution_note'])) ?></p>
+                        <?php if ($c['resolved_at']): ?>
+                          <p style="font-size:12px;color:var(--success);margin-top:4px;">Resolved: <?= htmlspecialchars($c['resolved_at']) ?></p>
+                        <?php endif; ?>
+                      </div>
                     <?php endif; ?>
                   </div>
                 </td>
@@ -209,53 +228,28 @@ $initials = strtoupper(substr($_SESSION['fullname'], 0, 1));
     </div>
   </div>
 
-  <!-- Detail Modals (hidden) -->
-  <?php foreach ($filtered as $i => $c): ?>
-  <div class="modal-overlay" id="detail-modal-<?= $i ?>">
-    <div class="modal">
-      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:16px;">
-        <h3><?= htmlspecialchars($c['id']) ?>: <?= htmlspecialchars($c['title']) ?></h3>
-        <button onclick="closeModal('detail-modal-<?= $i ?>')" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-muted);">×</button>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;font-size:13px;">
-        <div><strong>Student:</strong> <?= htmlspecialchars($c['student_name']) ?></div>
-        <div><strong>Category:</strong> <?= htmlspecialchars($c['category']) ?></div>
-        <div><strong>Priority:</strong> <?= priorityBadge($c['priority']) ?></div>
-        <div><strong>Status:</strong> <?= statusBadge($c['status']) ?></div>
-        <div><strong>Submitted:</strong> <?= htmlspecialchars($c['submitted_at']) ?></div>
-        <?php if ($c['assigned_to']): ?><div><strong>Assigned To:</strong> <?= htmlspecialchars($c['assigned_to']) ?></div><?php endif; ?>
-      </div>
-      <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--text-muted);margin-bottom:6px;">Description</div>
-      <p style="font-size:14px;line-height:1.7;color:var(--text);"><?= nl2br(htmlspecialchars($c['description'])) ?></p>
-      <?php if ($c['resolution_note']): ?>
-        <div style="background:var(--success-bg);border-radius:var(--radius);padding:12px 16px;margin-top:14px;">
-          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--success);margin-bottom:4px;">Resolution Note</div>
-          <p style="font-size:14px;color:var(--success);"><?= nl2br(htmlspecialchars($c['resolution_note'])) ?></p>
-        </div>
-      <?php endif; ?>
-      <button class="btn btn-outline" style="margin-top:20px;width:100%;justify-content:center;" onclick="closeModal('detail-modal-<?= $i ?>')">Close</button>
-    </div>
-  </div>
-  <?php endforeach; ?>
-
   <!-- Assign Modal -->
-  <div class="modal-overlay" id="assign-modal">
+  <div class="modal-overlay" id="assignModal">
     <div class="modal">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div class="modal-hd">
         <h3>Assign Complaint</h3>
-        <button onclick="closeModal('assign-modal')" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-muted);">×</button>
+        <button class="modal-close" onclick="closeModal('assignModal')">×</button>
       </div>
-      <form method="POST">
+      <form method="POST" action="admin_dashboard.php">
         <input type="hidden" name="action" value="assign">
-        <input type="hidden" name="complaint_id" id="assign-id">
+        <input type="hidden" name="complaint_id" id="assignId">
         <div class="form-group">
           <label>Assign to Staff Member</label>
-          <select name="assigned_to" id="assign-staff" required>
-            <option value="staff1">Rahim Mia (Maintenance Staff)</option>
+          <select name="assigned_to" required>
+            <?php foreach ($staff as $s): ?>
+              <option value="<?= htmlspecialchars($s['username']) ?>">
+                <?= htmlspecialchars($s['fullname']) ?> (<?= htmlspecialchars($s['username']) ?>)
+              </option>
+            <?php endforeach; ?>
           </select>
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px;">
-          <button type="button" class="btn btn-outline" onclick="closeModal('assign-modal')">Cancel</button>
+          <button type="button" class="btn btn-outline" onclick="closeModal('assignModal')">Cancel</button>
           <button type="submit" class="btn btn-primary">Assign & Set In Progress →</button>
         </div>
       </form>
@@ -263,42 +257,49 @@ $initials = strtoupper(substr($_SESSION['fullname'], 0, 1));
   </div>
 
   <!-- Resolve Modal -->
-  <div class="modal-overlay" id="resolve-modal">
+  <div class="modal-overlay" id="resolveModal">
     <div class="modal">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div class="modal-hd">
         <h3>Mark as Resolved</h3>
-        <button onclick="closeModal('resolve-modal')" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-muted);">×</button>
+        <button class="modal-close" onclick="closeModal('resolveModal')">×</button>
       </div>
-      <form method="POST">
+      <form method="POST" action="admin_dashboard.php">
         <input type="hidden" name="action" value="resolve">
-        <input type="hidden" name="complaint_id" id="resolve-id">
+        <input type="hidden" name="complaint_id" id="resolveId">
         <div class="form-group">
-          <label>Resolution Note</label>
+          <label>Resolution Note *</label>
           <textarea name="resolution_note" placeholder="Describe what was done to resolve this issue..." required></textarea>
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px;">
-          <button type="button" class="btn btn-outline" onclick="closeModal('resolve-modal')">Cancel</button>
-          <button type="submit" class="btn btn-success">Mark as Resolved ✓</button>
+          <button type="button" class="btn btn-outline" onclick="closeModal('resolveModal')">Cancel</button>
+          <button type="submit" class="btn btn-success">Mark Resolved ✓</button>
         </div>
       </form>
     </div>
   </div>
 
   <script>
-    function openDetail(i) { document.getElementById('detail-modal-' + i).classList.add('open'); }
-    function openAssign(id) {
-      document.getElementById('assign-id').value = id;
-      document.getElementById('assign-modal').classList.add('open');
-    }
-    function openResolve(id) {
-      document.getElementById('resolve-id').value = id;
-      document.getElementById('resolve-modal').classList.add('open');
-    }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-    // Close on backdrop click
-    document.querySelectorAll('.modal-overlay').forEach(el => {
-      el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
-    });
+  function toggleRow(i) {
+    var row = document.getElementById('detail-'+i);
+    row.classList.toggle('open');
+  }
+  function openAssign(id) {
+    document.getElementById('assignId').value = id;
+    document.getElementById('assignModal').classList.add('open');
+  }
+  function openResolve(id) {
+    document.getElementById('resolveId').value = id;
+    document.getElementById('resolveModal').classList.add('open');
+  }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(function(el) {
+    el.addEventListener('click', function(e) { if (e.target === el) el.classList.remove('open'); });
+  });
+  function toggleNotif() { document.getElementById('notifBox').classList.toggle('open'); }
+  document.addEventListener('click', function(e) {
+    var wrap = document.querySelector('.notif-wrap');
+    if (wrap && !wrap.contains(e.target)) document.getElementById('notifBox').classList.remove('open');
+  });
   </script>
 </body>
 </html>

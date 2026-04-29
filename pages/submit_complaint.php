@@ -1,44 +1,33 @@
 <?php
 session_start();
 if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'student') {
-    header("Location: login.php");
-    exit;
+    header("Location: login.php"); exit;
 }
+require_once 'helpers.php';
 
-$success = "";
-$error   = "";
+$success = $error = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $category    = trim($_POST['category'] ?? '');
-    $title       = trim($_POST['title'] ?? '');
+    $category    = trim($_POST['category']    ?? '');
+    $title       = trim($_POST['title']       ?? '');
     $description = trim($_POST['description'] ?? '');
-    $priority    = trim($_POST['priority'] ?? '');
+    $priority    = trim($_POST['priority']    ?? '');
 
-    $validCategories = ['Classroom','Hostel','Lab','Security','Cafeteria','Library'];
-    $validPriorities = ['High','Medium','Low'];
+    $validCats  = ['Classroom','Hostel','Lab','Security','Cafeteria','Library'];
+    $validPri   = ['High','Medium','Low'];
 
-    if (empty($category) || empty($title) || empty($description) || empty($priority)) {
+    if (!$category || !$title || !$description || !$priority)
         $error = "All fields are required.";
-    } elseif (!in_array($category, $validCategories) || !in_array($priority, $validPriorities)) {
-        $error = "Invalid category or priority selected.";
-    } elseif (strlen($title) < 5) {
+    elseif (!in_array($category, $validCats) || !in_array($priority, $validPri))
+        $error = "Invalid category or priority.";
+    elseif (strlen($title) < 5)
         $error = "Title must be at least 5 characters.";
-    } elseif (strlen($description) < 10) {
+    elseif (strlen($description) < 10)
         $error = "Description must be at least 10 characters.";
-    } else {
-        // Load existing complaints
-        $jsonPath = __DIR__ . '/../data/complaints.json';
-        $existing = json_decode(file_get_contents($jsonPath), true) ?? [];
-
-        // Generate new ID
-        $lastId = 0;
-        foreach ($existing as $c) {
-            $num = (int) ltrim($c['id'], 'CMP');
-            if ($num > $lastId) $lastId = $num;
-        }
-        $newId = 'CMP' . str_pad($lastId + 1, 3, '0', STR_PAD_LEFT);
-
-        $newComplaint = [
+    else {
+        $all   = loadComplaints();
+        $newId = nextComplaintId($all);
+        $all[] = [
             'id'               => $newId,
             'student_username' => $_SESSION['username'],
             'student_name'     => $_SESSION['fullname'],
@@ -50,15 +39,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'submitted_at'     => date('Y-m-d H:i:s'),
             'assigned_to'      => '',
             'resolution_note'  => '',
+            'resolved_at'      => '',
         ];
-
-        $existing[] = $newComplaint;
-        file_put_contents($jsonPath, json_encode($existing, JSON_PRETTY_PRINT));
-        $success = "Complaint #{$newId} submitted successfully! You can track its status in My Complaints.";
+        saveComplaints($all);
+        $success = "Complaint #{$newId} submitted successfully! Track it in My Complaints.";
     }
 }
 
 $initials = strtoupper(substr($_SESSION['fullname'], 0, 1));
+$all      = loadComplaints();
+$notifs   = getNotifications($all, $_SESSION['username'], 'student');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -78,8 +68,22 @@ $initials = strtoupper(substr($_SESSION['fullname'], 0, 1));
       <a href="my_complaints.php">My Complaints</a>
     </nav>
     <div class="user-badge">
+      <div class="notif-wrap">
+        <button class="notif-bell" onclick="toggleNotif()">
+          🔔<?php if (count($notifs)): ?><span class="notif-count"><?= count($notifs) ?></span><?php endif; ?>
+        </button>
+        <div class="notif-dropdown" id="notifBox">
+          <div class="notif-hd">🔔 Notifications</div>
+          <?php if (empty($notifs)): ?>
+            <div class="notif-empty">No notifications yet.</div>
+          <?php else: foreach ($notifs as $n): ?>
+            <div class="notif-item unread"><?= htmlspecialchars($n['msg']) ?><div class="notif-time"><?= htmlspecialchars($n['time']) ?></div></div>
+          <?php endforeach; endif; ?>
+        </div>
+      </div>
       <div class="avatar"><?= $initials ?></div>
       <span><?= htmlspecialchars($_SESSION['fullname']) ?></span>
+      <span class="role-tag">Student</span>
       <a href="logout.php" class="logout-btn">Logout</a>
     </div>
   </header>
@@ -93,7 +97,7 @@ $initials = strtoupper(substr($_SESSION['fullname'], 0, 1));
     <?php if ($success): ?>
       <div class="alert alert-success">
         ✅ <?= htmlspecialchars($success) ?>
-        <a href="my_complaints.php" style="margin-left:auto;font-weight:600;color:var(--success);">View Complaints →</a>
+        <a href="my_complaints.php" style="margin-left:auto;font-weight:bold;color:var(--success);">View My Complaints →</a>
       </div>
     <?php endif; ?>
     <?php if ($error): ?>
@@ -101,9 +105,8 @@ $initials = strtoupper(substr($_SESSION['fullname'], 0, 1));
     <?php endif; ?>
 
     <div class="card">
-      <h2 class="card-title">Complaint Details</h2>
+      <div class="card-title">Complaint Details</div>
       <form method="POST" action="submit_complaint.php">
-
         <div class="form-row">
           <div class="form-group">
             <label for="category">Category *</label>
@@ -118,9 +121,9 @@ $initials = strtoupper(substr($_SESSION['fullname'], 0, 1));
             <label for="priority">Priority *</label>
             <select id="priority" name="priority" required>
               <option value="" disabled <?= empty($_POST['priority']) ? 'selected' : '' ?>>Select priority</option>
-              <option value="High"   <?= (($_POST['priority'] ?? '') === 'High')   ? 'selected' : '' ?>>🔴 High — Urgent, affecting many</option>
-              <option value="Medium" <?= (($_POST['priority'] ?? '') === 'Medium') ? 'selected' : '' ?>>🟡 Medium — Important but not urgent</option>
-              <option value="Low"    <?= (($_POST['priority'] ?? '') === 'Low')    ? 'selected' : '' ?>>🟢 Low — Minor inconvenience</option>
+              <option value="High"   <?= (($_POST['priority'] ?? '') === 'High')   ? 'selected' : '' ?>>🔴 High — Urgent</option>
+              <option value="Medium" <?= (($_POST['priority'] ?? '') === 'Medium') ? 'selected' : '' ?>>🟡 Medium — Important</option>
+              <option value="Low"    <?= (($_POST['priority'] ?? '') === 'Low')    ? 'selected' : '' ?>>🟢 Low — Minor</option>
             </select>
           </div>
         </div>
@@ -143,28 +146,34 @@ $initials = strtoupper(substr($_SESSION['fullname'], 0, 1));
           <textarea
             id="description"
             name="description"
-            placeholder="Describe the problem in detail — location, how long it's been occurring, how it affects you..."
-            required
-          ><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
+            placeholder="Describe the problem in detail — include the exact location, how long it has been occurring, and how it affects you or other students."
+            required><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
         </div>
 
-        <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:4px;">
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px;">
           <a href="student_dashboard.php" class="btn btn-outline">Cancel</a>
           <button type="submit" class="btn btn-primary">Submit Complaint →</button>
         </div>
       </form>
     </div>
 
-    <!-- Tips -->
-    <div class="card" style="margin-top:20px;background:var(--info-bg);border-color:#b8d4f8;">
-      <h3 style="font-size:14px;font-weight:700;color:var(--info);margin-bottom:10px;">💡 Tips for a good complaint</h3>
+    <div class="card" style="margin-top:16px;background:var(--info-bg);border-color:#b8d4f8;">
+      <div style="font-size:14px;font-weight:bold;color:var(--info);margin-bottom:8px;">💡 Tips for a useful complaint</div>
       <ul style="font-size:13px;color:var(--info);line-height:2;padding-left:18px;">
         <li>Include the exact location (room number, block, floor).</li>
         <li>Mention how long the issue has existed.</li>
-        <li>Describe how it affects students or daily operations.</li>
-        <li>Choose <strong>High</strong> priority only for urgent safety or academic disruptions.</li>
+        <li>Describe how it affects you or other students.</li>
+        <li>Use <strong>High</strong> priority only for urgent safety or academic disruptions.</li>
       </ul>
     </div>
   </div>
+
+  <script>
+  function toggleNotif() { document.getElementById('notifBox').classList.toggle('open'); }
+  document.addEventListener('click', function(e) {
+    var wrap = document.querySelector('.notif-wrap');
+    if (wrap && !wrap.contains(e.target)) document.getElementById('notifBox').classList.remove('open');
+  });
+  </script>
 </body>
 </html>
