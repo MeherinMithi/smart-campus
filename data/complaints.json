@@ -1,0 +1,44 @@
+[
+  {
+    "id": "CMP001",
+    "student_username": "student1",
+    "student_name": "Ayesha Rahman",
+    "category": "Classroom",
+    "title": "Broken projector in Room 204",
+    "description": "The projector in classroom 204 has not been working for the past 3 days. It affects all lectures scheduled in that room.",
+    "priority": "High",
+    "status": "In Progress",
+    "submitted_at": "2026-04-18 09:30:00",
+    "assigned_to": "staff1",
+    "resolution_note": "",
+    "resolved_at": ""
+  },
+  {
+    "id": "CMP002",
+    "student_username": "student1",
+    "student_name": "Ayesha Rahman",
+    "category": "Hostel",
+    "title": "Water leakage in Block C bathroom",
+    "description": "There is a persistent water leak in the bathroom of Block C, Room 12. The floor stays wet and is a safety hazard.",
+    "priority": "Medium",
+    "status": "Submitted",
+    "submitted_at": "2026-04-20 11:15:00",
+    "assigned_to": "",
+    "resolution_note": "",
+    "resolved_at": ""
+  },
+  {
+    "id": "CMP003",
+    "student_username": "student1",
+    "student_name": "Ayesha Rahman",
+    "category": "Lab",
+    "title": "Computer #7 not turning on in CS Lab",
+    "description": "Computer number 7 in the Computer Science lab has been non-functional since last week. Students are unable to use it during lab sessions.",
+    "priority": "Low",
+    "status": "Resolved",
+    "submitted_at": "2026-04-10 14:00:00",
+    "assigned_to": "staff1",
+    "resolution_note": "Replaced the faulty power supply unit. Computer is fully functional now.",
+    "resolved_at": "2026-04-13 10:20:00"
+  }
+]
